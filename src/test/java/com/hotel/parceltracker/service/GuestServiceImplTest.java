@@ -3,6 +3,7 @@ package com.hotel.parceltracker.service;
 import com.hotel.parceltracker.dto.GuestDto;
 import com.hotel.parceltracker.entity.Guest;
 import com.hotel.parceltracker.entity.GuestStatus;
+import com.hotel.parceltracker.exception.BadRequestException;
 import com.hotel.parceltracker.exception.ResourceNotFoundException;
 import com.hotel.parceltracker.mapper.GuestMapper;
 import com.hotel.parceltracker.repository.GuestRepository;
@@ -108,5 +109,12 @@ class GuestServiceImplTest {
         assertEquals(GuestStatus.CHECKED_OUT, guest.getStatus());
         assertNotNull(guest.getCheckOutTime());
         verify(guestRepository, times(1)).save(guest);
+    }
+
+    @Test
+    void testCheckOut_alreadyCheckedOut() {
+        guest.setStatus(GuestStatus.CHECKED_OUT);
+        when(guestRepository.findById(1L)).thenReturn(Optional.of(guest));
+        assertThrows(BadRequestException.class, () -> guestService.checkOut(1L));
     }
 }
