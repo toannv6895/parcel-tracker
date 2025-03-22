@@ -26,6 +26,10 @@ spring:
     user:
       name: ${API_USERNAME}
       password: ${API_PASSWORD}
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=30m
 
 logging:
   level:

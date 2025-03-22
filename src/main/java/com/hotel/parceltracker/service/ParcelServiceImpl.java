@@ -3,9 +3,9 @@ package com.hotel.parceltracker.service;
 import com.hotel.parceltracker.dto.ParcelDto;
 import com.hotel.parceltracker.dto.request.ParcelFilter;
 import com.hotel.parceltracker.entity.Guest;
-import com.hotel.parceltracker.entity.GuestStatus;
 import com.hotel.parceltracker.entity.Parcel;
 import com.hotel.parceltracker.entity.ParcelStatus;
+import com.hotel.parceltracker.entity.GuestStatus;
 import com.hotel.parceltracker.exception.BadRequestException;
 import com.hotel.parceltracker.exception.ResourceNotFoundException;
 import com.hotel.parceltracker.mapper.ParcelMapper;
@@ -15,7 +15,12 @@ import com.hotel.parceltracker.specification.ParcelSpecification;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +40,7 @@ public class ParcelServiceImpl implements ParcelService {
     private final ParcelMapper parcelMapper;
 
     @Override
+    @CacheEvict(cacheNames = "parcels", key = "'all_*'")
     public ParcelDto create(ParcelDto dto) {
         logger.info("Creating new parcel for guest with ID: {}", dto.getGuestId());
         Guest guest = guestRepository.findById(dto.getGuestId())
@@ -50,6 +56,7 @@ public class ParcelServiceImpl implements ParcelService {
     }
 
     @Override
+    @Cacheable(cacheNames = "parcels", key = "#id")
     public ParcelDto findById(Long id) {
         logger.info("Fetching parcel with id: {}", id);
         Parcel parcel = parcelRepository.findById(id)
@@ -58,14 +65,17 @@ public class ParcelServiceImpl implements ParcelService {
     }
 
     @Override
-    public List<ParcelDto> findAll() {
-        logger.info("Fetching all parcels");
-        return parcelRepository.findAll().stream()
-                .map(parcelMapper::toDto)
-                .collect(Collectors.toList());
+    @Cacheable(cacheNames = "parcels", key = "'all_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+    public Page<ParcelDto> findAll(Pageable pageable) {
+        logger.info("Fetching all parcels with pagination");
+        return parcelRepository.findAll(pageable).map(parcelMapper::toDto);
     }
 
     @Override
+    @Caching(
+            put = @CachePut(cacheNames = "parcels", key = "#id"),
+            evict = @CacheEvict(cacheNames = "parcels", key = "'all_*'")
+    )
     public ParcelDto update(Long id, ParcelDto dto) {
         logger.info("Updating parcel with id: {}", id);
         Parcel parcel = parcelRepository.findById(id)
@@ -75,6 +85,12 @@ public class ParcelServiceImpl implements ParcelService {
     }
 
     @Override
+    @Caching(
+            evict = {
+                    @CacheEvict(cacheNames = "parcels", key = "#id"),
+                    @CacheEvict(cacheNames = "parcels", key = "'all_*'")
+            }
+    )
     public void delete(Long id) {
         logger.info("Deleting parcel with id: {}", id);
         Parcel parcel = parcelRepository.findById(id)
@@ -92,6 +108,10 @@ public class ParcelServiceImpl implements ParcelService {
     }
 
     @Override
+    @Caching(
+            put = @CachePut(cacheNames = "parcels", key = "#id"),
+            evict = @CacheEvict(cacheNames = "parcels", key = "'all_*'")
+    )
     public ParcelDto markAsPickedUp(Long id) {
         logger.info("Marking parcel with id: {} as picked up", id);
         Parcel parcel = parcelRepository.findById(id)

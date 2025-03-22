@@ -6,9 +6,12 @@ import com.hotel.parceltracker.service.ParcelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,11 +24,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/parcels")
 @Tag(name = "Parcel", description = "APIs for managing parcels in the hotel")
+@RequiredArgsConstructor
 public class ParcelController {
     private static final Logger logger = LoggerFactory.getLogger(ParcelController.class);
 
-    @Autowired
-    private ParcelService parcelService;
+    private final ParcelService parcelService;
 
     @PostMapping
     @Operation(summary = "Create a new parcel", description = "Creates a new parcel for a checked-in guest")
@@ -50,9 +53,10 @@ public class ParcelController {
     @GetMapping
     @Operation(summary = "Get all parcels", description = "Fetches all parcels")
     @ApiResponse(responseCode = "200", description = "List of parcels retrieved")
-    public ResponseEntity<List<ParcelDto>> getAllParcels() {
+    public ResponseEntity<Page<ParcelDto>> getAllParcels(
+            @PageableDefault(size = 20) Pageable pageable) {
         logger.info("Received request to fetch all parcels");
-        List<ParcelDto> parcels = parcelService.findAll();
+        Page<ParcelDto> parcels = parcelService.findAll(pageable);
         return ResponseEntity.ok(parcels);
     }
 

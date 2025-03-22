@@ -23,3 +23,7 @@ spring:
     user:
       name: admin
       password: secret
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=30m
