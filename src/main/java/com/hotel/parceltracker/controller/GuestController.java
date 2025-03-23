@@ -6,6 +6,7 @@ import com.hotel.parceltracker.service.GuestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ public class GuestController {
     @Operation(summary = "Create a new guest", description = "Creates a new guest and sets status to CHECKED_IN")
     @ApiResponse(responseCode = "201", description = "Guest created successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request data")
-    public ResponseEntity<GuestDto> createGuest(@RequestBody GuestDto guestDto) {
+    public ResponseEntity<GuestDto> createGuest(@Valid @RequestBody GuestDto guestDto) {
         logger.info("Received request to create guest: {}", guestDto.getName());
         GuestDto createdGuest = guestService.create(guestDto);
         return new ResponseEntity<>(createdGuest, HttpStatus.CREATED);
