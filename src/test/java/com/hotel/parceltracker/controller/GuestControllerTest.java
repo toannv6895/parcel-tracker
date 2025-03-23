@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hotel.parceltracker.dto.GuestDto;
 import com.hotel.parceltracker.dto.request.GuestFilter;
+import com.hotel.parceltracker.entity.Guest;
+import com.hotel.parceltracker.entity.GuestStatus;
+import com.hotel.parceltracker.entity.Parcel;
+import com.hotel.parceltracker.entity.ParcelStatus;
 import com.hotel.parceltracker.exception.BadRequestException;
 import com.hotel.parceltracker.exception.GlobalExceptionHandler;
 import com.hotel.parceltracker.exception.ResourceNotFoundException;
@@ -37,6 +41,7 @@ class GuestControllerTest {
     private static final String EXISTING_GUEST_NAME = "John Doe";
     private static final String NOT_FOUND_MESSAGE = "Guest not found with id: ";
     private static final String ALREADY_CHECKED_OUT_MESSAGE = "Guest is already checked out";
+    private static final String UNCLAIMED_PARCEL_CHECKED_OUT_MESSAGE = "Guest cannot check out with unclaimed parcels.";
 
 
     private MockMvc mockMvc;
@@ -48,6 +53,7 @@ class GuestControllerTest {
     private GuestController guestController;
 
     private GuestDto guestDto;
+    private Guest guest;
 
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
@@ -57,6 +63,12 @@ class GuestControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(guestController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+
+        guest = new Guest();
+        guest.setId(EXISTING_GUEST_ID);
+        guest.setName(EXISTING_GUEST_NAME);
+        guest.setStatus(GuestStatus.CHECKED_IN);
+        guest.setCheckInTime(LocalDateTime.now().minusDays(1));
 
         guestDto = new GuestDto();
         guestDto.setId(EXISTING_GUEST_ID);
@@ -199,5 +211,22 @@ class GuestControllerTest {
         mockMvc.perform(put(API_GUESTS_EXISTING_GUEST_ID + "/checkout"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(ALREADY_CHECKED_OUT_MESSAGE));
+    }
+
+    @Test
+    void testCheckOutGuest_UnclaimedParcels() throws Exception {
+        var parcel = new Parcel();
+        parcel.setId(1L);
+        parcel.setGuest(guest);
+        parcel.setDescription("Package description");
+        parcel.setReceivedDate(LocalDateTime.now().minusDays(1));
+        parcel.setStatus(ParcelStatus.PENDING);
+
+        when(guestService.checkOut(EXISTING_GUEST_ID))
+                .thenThrow(new BadRequestException(UNCLAIMED_PARCEL_CHECKED_OUT_MESSAGE));
+
+        mockMvc.perform(put(API_GUESTS_EXISTING_GUEST_ID + "/checkout"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(UNCLAIMED_PARCEL_CHECKED_OUT_MESSAGE));
     }
 }

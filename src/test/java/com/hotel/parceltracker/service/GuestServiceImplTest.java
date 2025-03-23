@@ -4,10 +4,13 @@ import com.hotel.parceltracker.dto.GuestDto;
 import com.hotel.parceltracker.dto.request.GuestFilter;
 import com.hotel.parceltracker.entity.Guest;
 import com.hotel.parceltracker.entity.GuestStatus;
+import com.hotel.parceltracker.entity.ParcelStatus;
 import com.hotel.parceltracker.exception.BadRequestException;
 import com.hotel.parceltracker.exception.ResourceNotFoundException;
+import com.hotel.parceltracker.exception.UnclaimedParcelException;
 import com.hotel.parceltracker.mapper.GuestMapper;
 import com.hotel.parceltracker.repository.GuestRepository;
+import com.hotel.parceltracker.repository.ParcelRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,18 +24,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.hotel.parceltracker.constants.TestConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class GuestServiceImplTest {
-
-    private static final Long EXISTING_GUEST_ID = 1L;
-    private static final Long NON_EXISTING_GUEST_ID = 999L;
-    private static final String EXISTING_GUEST_NAME = "John Doe";
-
     @Mock
     private GuestRepository guestRepository;
+    @Mock
+    private ParcelRepository parcelRepository;
 
     @Mock
     private GuestMapper guestMapper;
@@ -189,6 +190,17 @@ class GuestServiceImplTest {
         when(guestRepository.findById(NON_EXISTING_GUEST_ID)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> guestService.checkOut(NON_EXISTING_GUEST_ID));
         verify(guestRepository, times(1)).findById(NON_EXISTING_GUEST_ID);
+    }
+
+    @Test
+    void testCheckOutGuest_UnclaimedParcels() {
+        when(guestRepository.findById(EXISTING_GUEST_ID)).thenReturn(Optional.of(guest));
+        when(parcelRepository.existsByGuestIdAndStatusNot(EXISTING_GUEST_ID, ParcelStatus.PICKED_UP)).thenReturn(true);
+
+        assertThrows(UnclaimedParcelException.class, () -> guestService.checkOut(EXISTING_GUEST_ID));
+
+        verify(guestRepository, times(1)).findById(EXISTING_GUEST_ID);
+        verify(parcelRepository, times(1)).existsByGuestIdAndStatusNot(EXISTING_GUEST_ID, ParcelStatus.PICKED_UP);
     }
 
     @Test

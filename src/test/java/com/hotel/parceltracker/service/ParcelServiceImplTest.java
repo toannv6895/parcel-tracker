@@ -24,18 +24,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.hotel.parceltracker.constants.TestConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ParcelServiceImplTest {
-
-    private static final Long EXISTING_PARCEL_ID = 1L;
-    private static final Long NON_EXISTING_PARCEL_ID = 999L;
-    private static final Long EXISTING_GUEST_ID = 1L;
-    private static final String PACKAGE_DESCRIPTION = "Package Description";
-    private static final String UPDATED_DESCRIPTION = "Updated Description";
-
     @Mock
     private ParcelRepository parcelRepository;
 

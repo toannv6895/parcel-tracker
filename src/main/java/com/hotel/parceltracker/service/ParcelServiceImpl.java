@@ -23,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +42,7 @@ public class ParcelServiceImpl implements ParcelService {
 
     @Override
     @CacheEvict(cacheNames = "parcels", key = "'all_*'")
+    @Transactional
     public ParcelDto create(ParcelDto dto) {
         logger.info("Creating new parcel for guest with ID: {}", dto.getGuestId());
         Guest guest = guestRepository.findById(dto.getGuestId())
@@ -76,6 +78,7 @@ public class ParcelServiceImpl implements ParcelService {
             put = @CachePut(cacheNames = "parcels", key = "#id"),
             evict = @CacheEvict(cacheNames = "parcels", key = "'all_*'")
     )
+    @Transactional
     public ParcelDto update(Long id, ParcelDto dto) {
         logger.info("Updating parcel with id: {}", id);
         Parcel parcel = parcelRepository.findById(id)
@@ -91,6 +94,7 @@ public class ParcelServiceImpl implements ParcelService {
                     @CacheEvict(cacheNames = "parcels", key = "'all_*'")
             }
     )
+    @Transactional
     public void delete(Long id) {
         logger.info("Deleting parcel with id: {}", id);
         Parcel parcel = parcelRepository.findById(id)
@@ -112,6 +116,7 @@ public class ParcelServiceImpl implements ParcelService {
             put = @CachePut(cacheNames = "parcels", key = "#id"),
             evict = @CacheEvict(cacheNames = "parcels", key = "'all_*'")
     )
+    @Transactional
     public ParcelDto markAsPickedUp(Long id) {
         logger.info("Marking parcel with id: {} as picked up", id);
         Parcel parcel = parcelRepository.findById(id)
