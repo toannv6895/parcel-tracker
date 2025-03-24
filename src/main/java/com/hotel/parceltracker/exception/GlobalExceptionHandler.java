@@ -1,12 +1,14 @@
 package com.hotel.parceltracker.exception;
 
 import com.hotel.parceltracker.dto.response.ApiError;
+import jakarta.validation.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
@@ -35,6 +37,12 @@ public class GlobalExceptionHandler {
         logger.error("Unclaimed parcel issue: {}", ex.getMessage());
         ApiError apiError = new ApiError(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<String> invalidInputBodyHandler(ValidationException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
