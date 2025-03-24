@@ -23,6 +23,7 @@ spring:
     user:
       name: test
       password: test
+      roles: USER
   cache:
     type: caffeine
     caffeine:
